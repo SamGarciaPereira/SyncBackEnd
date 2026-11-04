@@ -38,13 +38,22 @@ function normalizeEmail(email: string) {
  * no passado e depois de 1900.
  */
 function parseBirthDate(value: string | Date): Date {
-  const date =
-    typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
-      ? new Date(`${value}T00:00:00.000Z`)
-      : new Date(value);
+  const isoDate = typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+  const date = isoDate
+    ? new Date(`${value}T00:00:00.000Z`)
+    : value instanceof Date
+      ? value
+      : new Date(NaN);
+
+  // new Date pode transformar uma data inexistente, como 2024-02-30, em março.
+  const invalidCalendarDate =
+    isoDate &&
+    !Number.isNaN(date.getTime()) &&
+    date.toISOString().slice(0, 10) !== value;
 
   if (
     isNaN(date.getTime()) ||
+    invalidCalendarDate ||
     date > new Date() ||
     date < new Date("1900-01-01T00:00:00.000Z")
   ) {

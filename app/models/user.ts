@@ -7,6 +7,7 @@ export interface UserCreateInput {
   email: string;
   password: string;
   birthDate?: string | Date | null;
+  phone?: string | null;
 }
 
 export interface UserUpdateInput {
@@ -14,6 +15,7 @@ export interface UserUpdateInput {
   email?: string;
   password?: string;
   activatedAt?: Date | null;
+  phone?: string | null;
 }
 
 const SALT_ROUNDS = 10;
@@ -26,6 +28,7 @@ const PUBLIC_FIELDS = {
   name: true,
   email: true,
   birthDate: true,
+  phone: true,
   activatedAt: true,
 } as const;
 
@@ -64,6 +67,31 @@ function parseBirthDate(value: string | Date): Date {
   }
 
   return date;
+}
+
+/**
+ * Valida um telefone brasileiro (DDD + número, com ou sem +55) e devolve
+ * no formato internacional "+5541999998888", pronto para uso no WhatsApp.
+ */
+function normalizePhone(value: string): string {
+  let digits = value.replace(/\D/g, "");
+
+  if ((digits.length === 12 || digits.length === 13) && digits.startsWith("55")) {
+    digits = digits.slice(2);
+  }
+
+  const validDdd = /^[1-9]{2}/.test(digits);
+  const validLength =
+    digits.length === 10 || (digits.length === 11 && digits[2] === "9");
+
+  if (!validDdd || !validLength) {
+    throw new ValidationError({
+      message: "O telefone informado não é válido.",
+      action: "Informe DDD e número (ex.: (41) 99999-8888).",
+    });
+  }
+
+  return `+55${digits}`;
 }
 
 async function create(userData: UserCreateInput) {
@@ -108,6 +136,10 @@ async function create(userData: UserCreateInput) {
   const birthDate = userData.birthDate
     ? parseBirthDate(userData.birthDate)
     : null;
+  
+  const phone = userData.phone 
+    ? normalizePhone(userData.phone)
+    : null;
 
   const existingUser = await prisma.user.findUnique({
     where: { email },
@@ -128,6 +160,7 @@ async function create(userData: UserCreateInput) {
       email,
       password: hashedPassword,
       birthDate,
+      phone,
     },
     select: PUBLIC_FIELDS,
   });
@@ -167,6 +200,12 @@ async function update(id: number, updateData: UserUpdateInput) {
   await findById(id);
 
   const dataToUpdate: Record<string, unknown> = { ...updateData };
+
+  if (updateData.phone !== undefined) {
+    dataToUpdate.phone = updateData.phone
+      ? normalizePhone(updateData.phone)
+      : null;
+  }
 
   if (updateData.password) {
     dataToUpdate.password = await bcrypt.hash(updateData.password, SALT_ROUNDS);

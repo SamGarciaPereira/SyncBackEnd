@@ -58,8 +58,22 @@ function parseBirthDate(value: string | Date): Date {
 }
 
 async function create(userData: UserCreateInput) {
-  const name = userData.name?.trim();
-  const email = userData.email ? normalizeEmail(userData.email) : "";
+  // O JSON recebido da API pode conter null, arrays ou valores de outros tipos.
+  if (
+    !userData ||
+    typeof userData !== "object" ||
+    typeof userData.name !== "string" ||
+    typeof userData.email !== "string" ||
+    typeof userData.password !== "string"
+  ) {
+    throw new ValidationError({
+      message: "Os campos 'name', 'email' e 'password' devem ser textos válidos.",
+      action: "Confira os campos enviados no cadastro.",
+    });
+  }
+
+  const name = userData.name.trim();
+  const email = normalizeEmail(userData.email);
 
   if (!name || !email || !userData.password) {
     throw new ValidationError({

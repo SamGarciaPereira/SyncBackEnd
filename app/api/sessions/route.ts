@@ -7,8 +7,8 @@ import session from "../../../app/models/session";
 async function postHandler(req: NextRequest) {
   const body = await req.json();
   const authenticatedUser = await authentication.login(
-    body.email,
-    body.password,
+    body?.email,
+    body?.password,
   );
 
   const token = await session.create(authenticatedUser.id);

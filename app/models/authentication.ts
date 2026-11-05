@@ -7,7 +7,12 @@ import { UnauthorizedError, ValidationError } from "../../infra/errors";
  * inexistente e senha errada, para não revelar quais e-mails existem.
  */
 async function login(email: string, providedPassword: string) {
-  if (!email?.trim() || !providedPassword) {
+  if (
+    typeof email !== "string" ||
+    typeof providedPassword !== "string" ||
+    !email.trim() ||
+    !providedPassword
+  ) {
     throw new ValidationError({
       message: "Informe o e-mail e a senha.",
       action: "Preencha os dois campos para entrar.",

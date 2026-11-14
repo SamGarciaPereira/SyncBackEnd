@@ -6,6 +6,8 @@ model User {
   birthDate   DateTime? @map("birth_date") @db.Date
   activatedAt DateTime? @map("activated_at")
   medications Medication[]
+  pushSubscriptions PushSubscription[]
+  doseEvents        DoseEvent[]
 
   @@map("user")
 }

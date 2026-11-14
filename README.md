@@ -152,6 +152,8 @@ O comando sobe o MySQL, aguarda o banco ficar disponível, aplica as migrations 
 | GET    | `/api/medications/:id`             | Detalha um medicamento do usuário logado 🔒                                                    |
 | PATCH  | `/api/medications/:id`             | Edita um medicamento (parcial; `schedules` substitui os horários) 🔒                           |
 | DELETE | `/api/medications/:id`             | Remove da lista (soft delete: `isActive = false`) 🔒                                           |
+| GET    | `/api/history`                     | Histórico 🔒: resumo e eventos (`type`, `from`, `to`, `limit`, `offset`)                       |
+| GET    | `/api/history/report`              | Relatório em PDF do histórico 🔒 (mesmos filtros `type`, `from`, `to`)                         |
 
 🔒 Exige login: sem o cookie de sessão a resposta é `401`. Medicamentos de outro usuário respondem `404`.
 

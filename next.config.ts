@@ -5,6 +5,8 @@ const allowedOrigin = process.env.CORS_ORIGIN || "http://localhost:5173";
 
 const nextConfig: NextConfig = {
   distDir: "dist",
+  // O pdfkit lê as fontes padrão do disco: não pode ser empacotado pelo Next.
+  serverExternalPackages: ["pdfkit"],
   async headers() {
     return [
       {

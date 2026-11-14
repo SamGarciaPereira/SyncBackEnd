@@ -7,6 +7,8 @@ model User {
   phone       String?   @db.VarChar(20)
   activatedAt DateTime? @map("activated_at")
   medications Medication[]
+  pushSubscriptions PushSubscription[]
+  doseEvents        DoseEvent[]
 
   @@map("user")
 }

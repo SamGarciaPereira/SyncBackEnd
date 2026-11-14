@@ -2,8 +2,8 @@ import { prisma } from "../../infra/prisma";
 import { sendPush, isSubscriptionGone } from "../../infra/webpush";
 import type { DosageUnit } from "@/generated/prisma/client";
 
-/** Rótulo curto da unidade, para o corpo da notificação. */
-const UNIT_LABELS: Record<DosageUnit, string> = {
+/** Rótulo curto da unidade, para o corpo da notificação e o histórico. */
+export const UNIT_LABELS: Record<DosageUnit, string> = {
   PILULA: "comprimido(s)",
   MG: "mg",
   ML: "ml",
@@ -109,6 +109,22 @@ async function dispatchDue(
         (s.daysOfWeek as number[]).includes(weekday),
     );
     if (!matches) continue;
+
+    // Registra o alarme no histórico, mesmo sem aparelho inscrito: com o app
+    // aberto o aviso aparece na tela independentemente do push.
+    await prisma.activityEvent
+      .create({
+        data: {
+          userId: med.userId,
+          medicationId: med.id,
+          type: "ALARM",
+          scheduledTime: hhmm,
+          occurredAt: now,
+        },
+      })
+      .catch((error) =>
+        console.error("[reminder] falha ao registrar o alarme:", error),
+      );
 
     const subscriptions = med.user.pushSubscriptions;
     if (subscriptions.length === 0) continue;

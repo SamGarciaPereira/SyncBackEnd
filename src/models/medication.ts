@@ -1,6 +1,8 @@
+
 import { prisma } from "../../infra/prisma";
 import { ValidationError, NotFoundError } from "../../infra/errors";
 import { MedicationForm, DosageUnit } from "@/generated/prisma/client";
+import { MEDICATION_CATALOG } from "./medicationCatalog";
 
 export interface ScheduleInput {
   time: string; // "HH:mm"
@@ -461,73 +463,45 @@ async function remove(id: number, userId?: number) {
 }
 
 /**
- * Popula o catálogo inicial caso esteja vazio para facilitar os testes e a apresentação
+ * Adiciona ao catálogo os medicamentos que ainda não existem.
+ * Mantém os registros já cadastrados no banco de dados.
  */
-async function ensureCatalogSeeded() {
-  const count = await prisma.medicationCatalog.count();
-  if (count > 0) return;
+let catalogSeedPromise: Promise<void> | undefined;
 
-  await prisma.medicationCatalog.createMany({
-    data: [
-      {
-        name: "Losartana Potássica 50mg",
-        activeIngredient: "Losartana Potássica",
-        concentration: "50mg",
-        form: "TABLET",
-        defaultUnit: "PILULA",
-        allowedUnits: ["PILULA", "MG"],
-        allowsSplitting: true,
-        requiresFasting: false,
-        defaultInstructions: "Pode ser administrado com ou sem alimentos.",
-      },
-      {
-        name: "Dipirona Monoidratada 500mg/mL (Gotas)",
-        activeIngredient: "Dipirona",
-        concentration: "500mg/mL",
-        form: "DROPS",
-        defaultUnit: "GOTAS",
-        allowedUnits: ["GOTAS", "ML"],
-        allowsSplitting: false,
-        requiresFasting: false,
-        defaultInstructions: "Agitar antes de usar.",
-      },
-      {
-        name: "Omeprazol 20mg",
-        activeIngredient: "Omeprazol",
-        concentration: "20mg",
-        form: "CAPSULE",
-        defaultUnit: "PILULA",
-        allowedUnits: ["PILULA"],
-        allowsSplitting: false,
-        requiresFasting: true,
-        defaultInstructions:
-          "Tomar em jejum, 30 minutos antes do café da manhã. Não abrir ou mastigar a cápsula.",
-      },
-      {
-        name: "Insulina NPH 100 UI/mL",
-        activeIngredient: "Insulina Humana",
-        concentration: "100 UI/mL",
-        form: "INJECTION",
-        defaultUnit: "UI",
-        allowedUnits: ["UI", "ML"],
-        allowsSplitting: true,
-        requiresFasting: false,
-        defaultInstructions:
-          "Manter sob refrigeração. Homogeneizar suavemente antes de aplicar.",
-      },
-      {
-        name: "Xarope Cloridrato de Ambroxol 30mg/5mL",
-        activeIngredient: "Cloridrato de Ambroxol",
-        concentration: "30mg/5mL",
-        form: "LIQUID",
-        defaultUnit: "ML",
-        allowedUnits: ["ML"],
-        allowsSplitting: true,
-        requiresFasting: false,
-        defaultInstructions: "Utilizar o copo dosador.",
-      },
-    ],
+async function ensureCatalogSeeded() {
+  if (!catalogSeedPromise) {
+    catalogSeedPromise = seedMissingCatalogEntries().catch((error) => {
+      catalogSeedPromise = undefined;
+      throw error;
+    });
+  }
+
+  return catalogSeedPromise;
+}
+
+async function seedMissingCatalogEntries() {
+  const existing = await prisma.medicationCatalog.findMany({
+    select: { name: true },
   });
+
+  const names = new Set(
+    existing.map((item) =>
+      item.name.trim().toLocaleLowerCase("pt-BR")
+    )
+  );
+
+  const missing = MEDICATION_CATALOG.filter(
+    (item) =>
+      !names.has(
+        item.name.trim().toLocaleLowerCase("pt-BR")
+      )
+  );
+
+  if (missing.length > 0) {
+    await prisma.medicationCatalog.createMany({
+      data: missing,
+    });
+  }
 }
 
 const medication = {

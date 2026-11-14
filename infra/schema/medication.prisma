@@ -75,6 +75,7 @@ model Medication {
   catalogItem       MedicationCatalog?    @relation(fields: [catalogId], references: [id], onDelete: SetNull)
   schedules         MedicationSchedule[]
   doseEvents        DoseEvent[]
+  activityEvents    ActivityEvent[]
 
   @@map("medication")
 }

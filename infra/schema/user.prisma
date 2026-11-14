@@ -9,6 +9,7 @@ model User {
   medications Medication[]
   pushSubscriptions PushSubscription[]
   doseEvents        DoseEvent[]
+  activityEvents    ActivityEvent[]
 
   @@map("user")
 }

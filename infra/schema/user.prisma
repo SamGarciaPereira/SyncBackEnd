@@ -4,6 +4,7 @@ model User {
   email       String    @unique
   password    String
   birthDate   DateTime? @map("birth_date") @db.Date
+  phone       String?   @db.VarChar(20)
   activatedAt DateTime? @map("activated_at")
   medications Medication[]
   pushSubscriptions PushSubscription[]

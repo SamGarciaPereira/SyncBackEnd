@@ -7,7 +7,7 @@
     "node": "24.x"
   },
   "scripts": {
-    "dev": "npm run services:up && npm run services:wait:database && npm run migrations:up:dev && next dev -p 3001",
+    "dev": "npm run services:up && npm run services:wait:database && npm run migrations:up:dev && concurrently -k -n next,worker -c green,cyan \"next dev -p 3001\" \"dotenv -e .env.development -- node infra/scripts/reminders-worker.js\"",
     "build": "prisma generate && next build",
     "start": "next start -p 3001",
     "test": "npm run services:up && concurrently -n next,jest -k -s command-jest \"next dev -p 3001\" \"cross-env NODE_OPTIONS=--experimental-vm-modules jest src/__tests__ --runInBand --forceExit\"",
@@ -23,6 +23,7 @@
     "migrations:reset": "dotenv -e .env.development -- prisma migrate reset",
     "prisma:generate": "dotenv -e .env.development -- prisma generate",
     "prisma:studio": "dotenv -e .env.development -- prisma studio",
+    "reminders": "dotenv -e .env.development -- node infra/scripts/reminders-worker.js",
     "lint:prettier:check": "prettier --check .",
     "lint:prettier:fix": "prettier --write .",
     "lint:eslint:check": "eslint . --max-warnings 0",
@@ -38,8 +39,10 @@
     "jose": "^6.2.3",
     "mariadb": "^3.5.4",
     "next": "16.2.5",
+    "node-cron": "^4.6.0",
     "set-cookie-parser": "^3.1.2",
-    "uuid": "^14.0.2"
+    "uuid": "^14.0.2",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.1",
@@ -50,6 +53,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/set-cookie-parser": "^2.4.10",
+    "@types/web-push": "^3.6.4",
     "commitizen": "^4.3.1",
     "concurrently": "^10.0.5",
     "cross-env": "^10.1.0",

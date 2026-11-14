@@ -1,0 +1,22 @@
+// Eventos do idoso que alimentam o histórico (além das doses, que ficam em DoseEvent).
+
+enum ActivityType {
+  ALARM // lembrete disparado no horário de uma dose
+  SOS_CALL // ligação de emergência — reservado: o botão SOS ainda está em desenvolvimento
+}
+
+model ActivityEvent {
+  id            Int          @id @default(autoincrement())
+  userId        Int          @map("user_id")
+  medicationId  Int?         @map("medication_id") // preenchido nos alarmes
+  type          ActivityType
+  scheduledTime String?      @map("scheduled_time") // "HH:mm" do lembrete, quando houver
+  occurredAt    DateTime     @default(now()) @map("occurred_at")
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  medication Medication? @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, occurredAt])
+  @@index([medicationId])
+  @@map("activity_event")
+}

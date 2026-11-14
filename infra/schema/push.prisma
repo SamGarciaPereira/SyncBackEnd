@@ -1,0 +1,41 @@
+// Inscrições de push (web push) e registro de doses tomadas.
+// Cada aparelho que ativa os lembretes gera uma PushSubscription.
+
+model PushSubscription {
+  id     Int @id @default(autoincrement())
+  userId Int @map("user_id")
+
+  // Endpoint do navegador (pode passar de 191 chars, por isso VarChar(500))
+  endpoint  String   @unique @db.VarChar(500)
+  p256dh    String // chave pública da inscrição (base64url)
+  auth      String // segredo de autenticação da inscrição (base64url)
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscription")
+}
+
+enum DoseStatus {
+  TAKEN // "Tomei"
+  SKIPPED // registrado como não tomada (uso futuro)
+}
+
+// Registro de que uma dose foi confirmada ("Tomei") — base para o histórico.
+model DoseEvent {
+  id            Int        @id @default(autoincrement())
+  medicationId  Int        @map("medication_id")
+  userId        Int        @map("user_id")
+  scheduledTime String?    @map("scheduled_time") // "HH:mm" do lembrete, quando houver
+  status        DoseStatus @default(TAKEN)
+  takenAt       DateTime   @default(now()) @map("taken_at")
+
+  medication Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, takenAt])
+  @@index([medicationId])
+  @@map("dose_event")
+}
